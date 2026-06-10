@@ -1,0 +1,48 @@
+name: "On Push — Lint & Syntax"
+
+on:
+  push:
+    branches: ['**']   # Every branch, every push
+
+jobs:
+  python-lint:
+    name: "Python Lint"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: "Install linting tools"
+        run: pip install flake8 black isort
+
+      - name: "Check formatting (Black)"
+        run: black --check docker/ scripts/
+
+      - name: "Check import order (isort)"
+        run: isort --check-only docker/ scripts/
+
+      - name: "Lint with flake8"
+        run: flake8 docker/ scripts/ --max-line-length=100
+
+  yaml-lint:
+    name: "YAML Lint"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: ansible/ kubernetes/ monitoring/ .github/
+
+  dockerfile-lint:
+    name: "Dockerfile Lint"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          recursive: true
+          failure-threshold: warning
